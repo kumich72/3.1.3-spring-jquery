@@ -1,0 +1,600 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>User's list</title>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+<!--<script src="users1.js"></script>-->
+
+<script>
+    $(document).ready(function () {
+        getUsers();
+    });
+
+
+    function setUserInfo(currentUser, rolesCurrentUser) {
+        document.getElementById('id_info').value = currentUser.id;
+        document.getElementById('name_info').value = currentUser.name;
+        document.getElementById('password_info').value = currentUser.password;
+        document.getElementById('email_info').value = currentUser.email;
+
+        let innerHTML = "";
+
+        for (let i = 0; i < rolesCurrentUser.length; i++) {
+            innerHTML += "&nbsp;<span>" + rolesCurrentUser[i].name + "</span>&nbsp;";
+        }
+        document.getElementById('roles_info').innerHTML = innerHTML;
+    }
+
+    $('#v-pills-tab a').on('click', function (e) {
+        e.preventDefault()
+        $(this).tab('show')
+    })
+
+    async function getUsers() {
+        /* ваш код */
+        let url = "http://localhost:8080/getUsers";
+        let response = await fetch(url);
+
+        let result = await response.json(); // читать тело ответа в формате JSON
+
+        getLogout(result.currentUser, result.rolesCurrentUser);
+
+
+        getVerticalPils(result.rolesCurrentUser);
+
+        getAllUsersTable(result.userRoles);
+
+        setAddRoles(result.roles);
+
+        setUserInfo(result.currentUser, result.rolesCurrentUser);
+    }
+
+    function setAddRoles(roles) {
+        let innerHTML = "";
+        let roles_add_div = document.getElementById('roles_add_div');
+        for (let i = 0; roles[i]; ++i) {
+            // alert(roles[i]);
+            innerHTML += '<input class="rolesAddCheckbox" type="checkbox" name="roles_add" id="roles_add_' + i + '" value="' + roles[i] + '">';
+            innerHTML += '<label class="form-check-label" for="roles_add_' + i + '">' + roles[i] + '</label>';
+        }
+        roles_add_div.innerHTML = innerHTML;
+    }
+
+
+    async function addNewUser() {
+        let name = document.getElementById('name');
+        let email = document.getElementById('email');
+        let password = document.getElementById('password');
+
+        let checkedValue = null;
+        let roles = [];
+        let inputElements = document.getElementsByClassName('rolesAddCheckbox');
+        for (var i = 0; inputElements[i]; ++i) {
+            if (inputElements[i].checked) {
+                checkedValue = inputElements[i].value;
+                roles.push(checkedValue);
+                console.log(checkedValue);
+            }
+        }
+
+        let url = "http://localhost:8080/addNew";
+
+        let response = await fetch(url + '?' + new URLSearchParams({
+            name: name.value,
+            email: email.value,
+            password: password.value,
+            roles: roles
+        }));
+        let result = await response.json();
+        console.log("result=");
+        console.log(result);
+
+        // $('#editModal').modal("hide");
+        name.value = "";
+        email.value = "";
+        password.value = "";
+        $('#home-tab').tab('show')
+        getUsers();
+    }
+
+    async function editModal() {
+        let label_edit = document.getElementById('label_edit');
+        let name_edit = document.getElementById('name_edit');
+        let email_edit = document.getElementById('email_edit');
+        let password_edit = document.getElementById('password_edit');
+
+        let checkedValue = null;
+        let roles = [];
+        let inputElements = document.getElementsByClassName('rolesCheckbox');
+        for (var i = 0; inputElements[i]; ++i) {
+            if (inputElements[i].checked) {
+                checkedValue = inputElements[i].value;
+                roles.push(checkedValue);
+                console.log(checkedValue);
+            }
+        }
+
+        let url = "http://localhost:8080/editNew";
+
+        let response = await fetch(url + '?' + new URLSearchParams({
+            id_edit: label_edit.value,
+            name_edit: name_edit.value,
+            email_edit: email_edit.value,
+            password_edit: password_edit.value,
+            roles_edit: roles
+        }));
+        let result = await response.json();
+        console.log("result=");
+        console.log(result);
+
+        $('#editModal').modal("hide");
+        getUsers();
+    }
+
+    async function deleteModal() {
+        let label_delete = document.getElementById('label_delete');
+
+        let url = "http://localhost:8080/deleteNew";
+
+        let response = await fetch(url + '?' + new URLSearchParams({
+            id_delete: label_delete.value
+        }));
+        let result = await response.json();
+        console.log("result=");
+        console.log(result);
+
+        $('#deleteModal').modal("hide");
+        getUsers();
+    }
+
+    async function fillEditModal(id) {
+        let innerHTML = "";
+        let label_edit = document.getElementById('label_edit');
+        label_edit.value = id;
+        let url = "http://localhost:8080/getUserRoleByUserId";
+        let response = await fetch(url + '?' + new URLSearchParams({
+            id: id
+        }));
+        let result = await response.json();
+        if (result.user != null) {
+            let name_edit = document.getElementById('name_edit');
+            name_edit.value = result.user.name;
+            let email_edit = document.getElementById('email_edit');
+            email_edit.value = result.user.email;
+            let password_edit = document.getElementById('password_edit');
+            password_edit.value = result.user.password;
+        }
+
+        console.log(result.rolesUser);
+        if (result.rolesUser != null) {
+            let roles = Object.entries(result.rolesUser);
+            console.log(roles);
+            let count = 1;
+            for (let [key, value] of Object.entries(result.rolesUser)) {
+                innerHTML += '<div class="form-check form-check-inline">';
+                if (value === true) {
+                    // alert(`${key}:${value}`);
+                    innerHTML += '<input class="rolesCheckbox" type="checkbox" name="roles_edit" id="roles_edit_' + count + '" value="' + key + '" checked>';
+                } else {
+                    innerHTML += '<input class="rolesCheckbox" type="checkbox" name="roles_edit" id="roles_edit_' + count + '" value="' + key + '">';
+                }
+                innerHTML += '<label class="form-check-label" for="roles_edit_' + count + '">' + key + '</label>';
+                count++;
+                innerHTML += '</div>'
+            }
+            let roles_edit_div = document.getElementById('roles_edit_div');
+            roles_edit_div.innerHTML = innerHTML;
+        }
+    }
+
+    async function fillDeleteModal(id) {
+        let innerHTML = "";
+        let label_delete = document.getElementById('label_delete');
+        label_delete.value = id;
+        let url = "http://localhost:8080/getUserRoleByUserId"
+        let response = await fetch(url + '?' + new URLSearchParams({
+            id: id
+        }));
+        let result = await response.json();
+        if (result.user != null) {
+            let name_delete = document.getElementById('name_delete');
+            name_delete.value = result.user.name;
+            let email_delete = document.getElementById('email_delete');
+            email_delete.value = result.user.email;
+            let password_delete = document.getElementById('password_delete');
+            password_delete.value = result.user.password;
+            let id_delete = document.getElementById('id_delete');
+            id_delete.value = result.user.id;
+        }
+
+        if (result.rolesUser != null) {
+            let roles = Object.entries(result.rolesUser);
+            console.log(roles);
+            for (let [key, value] of Object.entries(result.rolesUser)) {
+                if (value === true) {
+                    innerHTML += '<label class="checkbox"><input type="checkbox" disabled id="roles_delete" name="roles_delete" value=' + key + ' checked>';
+                } else {
+                    innerHTML += '<label class="checkbox"><input type="checkbox" disabled id="roles_delete" name="roles_delete" value=' + key + '>';
+                }
+                innerHTML += '<span>' + key + '</span></label>';
+            }
+            let roles_edit_div = document.getElementById('roles_delete_div');
+            roles_edit_div.innerHTML = innerHTML;
+        }
+    }
+
+    function getAllUsersTable(userRoles) {
+        let innerHTML = "<label class=\"font-weight-bold\">All user</label>";
+
+        innerHTML += '<table class="table table-striped bg-white border-right border-bottom">';
+        innerHTML += '<tr>';
+        innerHTML += '        <th>Id</th>';
+        innerHTML += '        <th>Name</th>';
+        innerHTML += '        <th>Email</th>';
+        innerHTML += '        <th>Role</th>';
+        innerHTML += '        <th>Edit</th>';
+        innerHTML += '        <th>Delete</th>';
+        innerHTML += '</tr>';
+
+        for (let i = 0; i < userRoles.length; i++) {
+            innerHTML += '<tr>';
+            innerHTML += '<td>' + userRoles[i].user.id + '</td>';
+            innerHTML += '<td>' + userRoles[i].user.name + '</td>';
+            innerHTML += '<td>' + userRoles[i].user.email + '</td>';
+            innerHTML += '        <td>';
+            for (let j = 0; j < userRoles[i].roles.length; j++) {
+                innerHTML += '                <label>' + userRoles[i].roles[j].name + '</label>';
+            }
+            innerHTML += '        </td>';
+
+            innerHTML += '<td>';
+            innerHTML += '<button type="button" class="btn btn-info" data-toggle="modal" onClick="fillEditModal(' + userRoles[i].user.id + ')" data-target="#editModal">Edit</button>';
+            innerHTML += '</td>';
+            innerHTML += '<td>';
+            innerHTML += '<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" onClick="fillDeleteModal(' + userRoles[i].user.id + ')">Delete</button>';
+            innerHTML += '</td>';
+            innerHTML += '</tr>';
+        }
+        innerHTML += '</table>';
+        document.getElementById('tableAllUser').innerHTML = innerHTML;
+    }
+
+    function getLogout(currentUser, rolesCurrentUser) {
+        document.getElementById('userNameLogout').innerHTML = currentUser.name;
+
+        let innerHTML = "<span> with roles :</span>";
+
+        for (let i = 0; i < rolesCurrentUser.length; i++) {
+            innerHTML += "&nbsp;<span>" + rolesCurrentUser[i].name + "</span>&nbsp;";
+        }
+        document.getElementById('userRolesLogout').innerHTML = innerHTML;
+    }
+
+    function getVerticalPils(rolesCurrentUser) {
+        let innerHTML = "";
+        for (let i = 0; i < rolesCurrentUser.length; i++) {
+            if (i === 0) {
+                innerHTML += "<a class='nav-link active show' id='v-pills-" +
+                    rolesCurrentUser[i].name + "-tab' data-toggle='pill' href='#v-pills-" +
+                    rolesCurrentUser[i].name + "' aria-selected='true' aria-controls='v-pills-" +
+                    rolesCurrentUser[i].name + "' role='tab' value='" + rolesCurrentUser[i].name + "'>";
+                innerHTML += "<span>" + rolesCurrentUser[i].name + "</span></a>";
+            } else {
+                innerHTML += "<a class='nav-link' id='v-pills-" +
+                    rolesCurrentUser[i].name + "-tab' data-toggle='pill' href='#v-pills-" +
+                    rolesCurrentUser[i].name + "' aria-selected='false' aria-controls='v-pills-" +
+                    rolesCurrentUser[i].name + "' role='tab' value='" + rolesCurrentUser[i].name + "'>";
+                innerHTML += "<span>" + rolesCurrentUser[i].name + "</span></a>";
+            }
+        }
+        document.getElementById('v-pills-tab').innerHTML = innerHTML;
+    }
+</script>
+
+<div class="container-fluid">
+    <div class="row bg-dark text-white">
+        <div class="col-5">
+            <th:block>
+                <span class="font-weight-bold" id="userNameLogout" name="userNameLogout"></span>
+            </th:block>
+            <span id="userRolesLogout" name="userRolesLogout"></span>
+        </div>
+        <div class="col-6">
+        </div>
+        <div class="col">
+            <a th:href="@{/logout}">Logout</a>
+        </div>
+    </div>
+</div>
+
+<!--Вертикалье подушки pils для переключение между ролями-->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-2">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            </div>
+        </div>
+
+        <div class="col-10 bg-light">
+            <div class="tab-content" id="v-pills-tabContent">
+                <div class="tab-pane fade show active bg-light" id="v-pills-ADMIN" role="tabpanel"
+                     aria-labelledby="v-pills-ADMIN-tab">
+
+                    <h3>Admin panel</h3>
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item ">
+                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab"
+                               aria-controls="home"
+                               aria-selected="true">Users table</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="add-tab" data-toggle="tab" href="#add" role="tab"
+                               aria-controls="add">New User</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content bg-light">
+                        <div class="tab-pane active bg-light" id="home" role="tabpanel" aria-labelledby="home-tab">
+                            <div class="container-fluid bg-light" id="tableAllUser">
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="add" role="tabpanel" aria-labelledby="add-tab">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-4 bg-white">
+                                    </div>
+                                    <div class="col-md-4 bg-white">
+                                        <div class="col pt-5 text-center"><strong>Name</strong></div>
+                                        <div class="col"><input class="btn-block form-control" type="text" id="name"
+                                                                name="name"
+                                                                placeholder="Name"/>
+                                        </div>
+                                        <div class="col pt-5 text-center"><strong>Email</strong></div>
+                                        <div class="col"><input class="btn-block form-control" type="text"
+                                                                id="email"
+                                                                name="email"
+                                                                placeholder="Email"/>
+                                        </div>
+                                        <div class="col pt-5 text-center"><strong>Password</strong></div>
+                                        <div class="col"><input class="btn-block form-control" type="password"
+                                                                id="password"
+                                                                name="password"
+                                                                placeholder="Password"/>
+                                        </div>
+                                        <div class="col btn-block  pt-5 text-center"><strong>Role</strong></div>
+                                        <div class="col">
+                                            <div id="roles_add_div" name="roles_add_div"
+                                                 class="btn-block form-control form-check form-check-inline"></div>
+                                        </div>
+                                        <div class="col text-center">
+                                            <button type="submit" onclick="addNewUser()" class="btn btn-success">Add a
+                                                new
+                                                user
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 bg-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="tab-pane fade" id="v-pills-USER" role="tabpanel" aria-labelledby="v-pills-USER-tab">
+                    <div class="row">
+                        <div class="col">
+                        </div>
+                        <div class="col-6">
+                            <div class="col pt-5"><p class="font-weight-bold text-center">Id</p>
+                            </div>
+                            <div class="col"><input class="btn-block form-control" type="text"
+                                                    id="id_info"
+                                                    name="id_info" disabled/>
+                            </div>
+                            <div class="col pt-5"><p class="font-weight-bold text-center">
+                                Name</p>
+                            </div>
+                            <div class="col"><input class="btn-block form-control" type="text"
+                                                    id="name_info"
+                                                    name="name_info" disabled/>
+                            </div>
+                            <div class="col pt-5"><p class="font-weight-bold text-center">
+                                Email</p>
+                            </div>
+                            <div class="col"><input class="btn-block form-control" type="text"
+                                                    id="email_info"
+                                                    name="email_info"
+                                                    disabled/>
+                            </div>
+                            <div class="col pt-5"><p class="font-weight-bold text-center">
+                                Password</p>
+                            </div>
+                            <div class="col"><input class="btn-block form-control" type="text"
+                                                    id="password_info"
+                                                    name="password_info"
+                                                    placeholder="Password" disabled/>
+                            </div>
+                            <div class="col btn-block  pt-5"><p
+                                    class="font-weight-bold text-center">
+                                Role</p>
+                            </div>
+                            <div class="col">
+                                <div id="roles_info" name="roles_info"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Edit-->
+            <div class="modal fade" id="editModal" tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabelEdit">Edit user</h5>
+                            <button type="button" class="close" data-dismiss="modal"
+                                    aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col">
+                                </div>
+                                <div class="col-6">
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Id</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control"
+                                                            type="text"
+
+                                                            id="label_edit"
+                                                            name="label_edit" disabled/>
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Name</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control"
+                                                            type="text"
+
+                                                            id="name_edit"
+                                                            name="name_edit" disabled/>
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Email</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control"
+                                                            type="text"
+                                                            id="email_edit"
+                                                            name="email_edit"
+                                    />
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Password</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control"
+                                                            type="text"
+                                                            id="password_edit"
+                                                            name="password_edit"
+                                                            placeholder="Password"/>
+                                    </div>
+                                    <div class="col btn-block  pt-5"><p
+                                            class="font-weight-bold text-center">
+                                        Role</p></div>
+                                    <div class="col">
+                                        <div id="roles_edit_div" name="roles_edit_div"
+                                             class="btn-block form-control"></div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <input class="btn-block form-control" type="hidden" id="id_edit"
+                                   name="id_edit">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                Close
+                            </button>
+                            <button type="submit" onclick="
+                                editModal()" class="btn btn-primary">Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Delete-->
+            <div class="modal fade" id='deleteModal' tabindex="-1"
+                 role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Delete user</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col">
+                                </div>
+                                <div class="col-6">
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">Id</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control" type="text"
+                                                            id="label_delete"
+                                                            name="label_delete" disabled/>
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Name</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control" type="text"
+                                                            id="name_delete"
+                                                            name="name_delete" disabled/>
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Email</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control" type="text"
+                                                            id="email_delete"
+                                                            name="email_delete"
+                                                            disabled/>
+                                    </div>
+                                    <div class="col pt-5"><p class="font-weight-bold text-center">
+                                        Password</p>
+                                    </div>
+                                    <div class="col"><input class="btn-block form-control" type="text"
+                                                            id="password_delete"
+                                                            name="password_delete"
+                                                            placeholder="Password" disabled/>
+                                    </div>
+                                    <div class="col btn-block  pt-5"><p
+                                            class="font-weight-bold text-center">
+                                        Role</p>
+                                    </div>
+                                    <div class="col">
+                                        <div id="roles_delete_div" name="roles_delete_div"
+                                             class="btn-block form-control"></div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close
+                            </button>
+                            <input type="hidden" id="id_delete" name="id_delete">
+                            <button type="submit" onclick="
+                                deleteModal()" class="btn btn-danger">Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
