@@ -32,24 +32,6 @@ public class UserController {
         this.userService = userService;
     }
 
-//    @PreAuthorize("hasAnyAuthority('USER')")
-//    @GetMapping(value = "user")
-//    @ResponseBody
-//    public ModelAndView printCurrentUser() {
-//        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-//        HttpSession session = attr.getRequest().getSession();
-//        String username = (String) session.getAttribute("username");
-//        String password = (String) session.getAttribute("password");
-//        User currentUser = userService.getUserByNameAndPassword(username, password);
-//        List<Role> roles = userService.getRolesByUser(currentUser);
-//        List<Role> rolesCurrentUser = userService.getRolesByUser(currentUser);
-//        ModelAndView result = new ModelAndView("user");
-//        result.addObject("roles", roles);
-//        result.addObject("currentUser", currentUser);
-//        result.addObject("rolesCurrentUser", rolesCurrentUser);
-//        return result;
-//    }
-
     @PreAuthorize("hasAnyAuthority('USER')")
     @GetMapping(value = "getUser")
     @ResponseBody
@@ -60,9 +42,6 @@ public class UserController {
         String password = (String) session.getAttribute("password");
         UsersPageList usersPageList = new UsersPageList();
 
-//        User currentUser = userService.getUserByNameAndPassword(username, password);
-//        List<Role> roles = userService.getRolesByUser(currentUser);
-//        List<Role> rolesCurrentUser = userService.getRolesByUser(currentUser);
         List<String> roles = userService.getAllRoles();
         usersPageList.setRoles(roles);
 
@@ -76,37 +55,11 @@ public class UserController {
         userRole.setUser(currentUser);
         userRole.setRoles(rolesCurrentUser);
 
-//        List<UserRole> userRoles = userService.getAllUsersAndRoles();
         List<UserRole> userRoles = Collections.singletonList(userRole);
         usersPageList.setUserRoles(userRoles);
 
         return usersPageList;
     }
-
-//    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
-//    @GetMapping(value = "users")
-//    @ResponseBody
-//    public ModelAndView printUsersOld(Model model) {
-//        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-//        HttpSession session = attr.getRequest().getSession();
-//        String username = (String) session.getAttribute("username");
-//        String password = (String) session.getAttribute("password");
-//        User currentUser = userService.getUserByNameAndPassword(username, password);
-//        List<Role> rolesCurrentUser = userService.getRolesByUser(currentUser);
-//
-//        List<UserRole> userRoles = userService.getAllUsersAndRoles();
-//
-//
-//        ModelAndView modelAndView = new ModelAndView();
-//        List<String> roles = userService.getAllRoles();
-//        modelAndView.setViewName("users");
-//        modelAndView.addObject("userRoles", userRoles);
-//        modelAndView.addObject("roles", roles);
-//        modelAndView.addObject("rolesCurrentUser", rolesCurrentUser);
-//        modelAndView.addObject("currentUser", currentUser);
-//
-//        return modelAndView;
-//    }
 
     @PreAuthorize("hasAnyAuthority( 'USER')")
     @GetMapping(value = "user")
